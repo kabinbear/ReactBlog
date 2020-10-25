@@ -1,65 +1,92 @@
 import Head from 'next/head'
+import React, { useState } from 'react'
+import Link from 'next/link'
 import styles from '../styles/Home.module.css'
+import { Row, Col, List } from 'antd'
+import Header from '../components/Headers'
+import { createFromIconfontCN } from '@ant-design/icons';
+import Author from '../components/Author'
+import Footer from '../components/Footer'
+import axios from 'axios'
+import servicePath from '../config/apiUrl'
+import marked from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/monokai-sublime.css';
 
-export default function Home() {
+
+function Home(list) {
+  const [mylist, setmylist] = useState(list.data
+  )
+  const IconFont = createFromIconfontCN({
+    scriptUrl: '//at.alicdn.com/t/font_2146321_6yg1gzigj6u.js',
+  })
+  const renderer = new marked.Renderer();
+  marked.setOptions({
+    renderer: renderer,
+    gfm: true,
+    pedantic: false,
+    sanitize: false,
+    tables: true,
+    breaks: false,
+    smartLists: true,
+    smartypants: false,
+    sanitize: false,
+    xhtml: false,
+    highlight: function (code) {
+      return hljs.highlightAuto(code).value;
+    }
+
+  });
+
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>欢迎来到3T的博客</title>
       </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+      <Header />
+      <Row className="comm-main" type="flex" justify="center">
+        <Col className="comm-left" xs={24} sm={24} md={16} lg={18} xl={14}  >
+          <List
+            header={<div>最新日志</div>}
+            itemLayout="vertical"
+            dataSource={mylist}
+            renderItem={item => (
+              <List.Item>
+                <div className="list-title">
+                  <Link href={{ pathname: '/detail', query: { id: item.id } }}>
+                    <a>{item.title}</a>
+                  </Link>
+                </div>
+                <div className="list-icon">
+                  <span><IconFont type="icon-good" />{item.addTime}</span>
+                  <span><IconFont type="icon-fabulous" /> {item.typeName}</span>
+                  <span><IconFont type="icon-more" />{item.view_count}人</span>
+                </div>
+                <div className="list-context"
+                  dangerouslySetInnerHTML={{ __html: marked(item.introduce) }}
+                ></div>
+              </List.Item>
+            )}
+          />
+        </Col>
+        <Col className="comm-right" xs={0} sm={0} md={7} lg={5} xl={4}>
+          <Author></Author>
+        </Col>
+      </Row>
+      <Footer></Footer>
     </div>
   )
 }
+Home.getInitialProps = async () => {
+  const promise = new Promise((resolve) => {
+    axios(servicePath.getArticleList).then(
+      (res) => {
+        console.log('远程获取数据结果:', res.data)
+        resolve(res.data)
+      }
+    )
+  }
+  )
+  return await promise
+}
+export default Home
